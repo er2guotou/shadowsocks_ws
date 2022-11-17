@@ -30,7 +30,7 @@ import { loadFile, parseJSON, errorlog, warnlog, debuglog } from './helper.mjs'
     timeout,
     origin: config.remote_address, // for ws
     headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:97.0) Gecko/20100101 Firefox/97.0',
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:100.0) Gecko/20100101 Firefox/100.0',
       'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
       'Accept-Language': 'zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2',
       'Accept-Encoding': 'gzip, deflate, br'
@@ -99,12 +99,12 @@ import { loadFile, parseJSON, errorlog, warnlog, debuglog } from './helper.mjs'
   start(protocol, addr, config.local_port, options)
 })()
 
-function getURL (config) {
+function getURL(config) {
   const userinfo = Buffer.from(config.method + ':' + config.password).toString('base64')
   return 'ss://' + userinfo + '@' + config.local_address + ':' + config.local_port
 }
 
-function attempt (protocol, options) {
+function attempt(protocol, options) {
   return new Promise((resolve, reject) => {
     const req = (protocol === 'https:' ? https : http).request(options, (res) => {
       if (res.statusCode === 200) resolve(true)
@@ -124,7 +124,7 @@ function attempt (protocol, options) {
   })
 }
 
-function start (protocol, remote_host, local_port, options) {
+function start(protocol, remote_host, local_port, options) {
   const prefix = protocol === 'https:' ? 'wss://' : 'ws://'
   const remote_address = prefix + remote_host
 
@@ -135,7 +135,9 @@ function start (protocol, remote_host, local_port, options) {
     let wss = null
     const ws = new WebSocket(remote_address, options)
     ws.on('unexpected-response', (req, res) => {
-      errorlog('unexpected response, please check your server and try again.')
+      debuglog(`HTTP response status code: ${res.statusCode}`)
+      if (res.statusCode === 429) return
+      errorlog(`unexpected response received from server. please ensure that the server is running.`)
       process.exit(1)
     })
     ws.on('open', () => {
